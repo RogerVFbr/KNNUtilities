@@ -77,7 +77,6 @@ if __name__ == "__main__":
         'b': [5, 9, 11]
     })
 
-    print()
     print('Result type is: ', type(results))
     print('Result content type is: ', type(results[0]))
     [print(x) for x in results]
