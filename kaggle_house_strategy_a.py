@@ -53,15 +53,13 @@ if __name__ == "__main__":
     strat = KaggleHouseStrategyA("data_sets/kaggle_house/train.csv")
 
     ps = ParamShuffler(strat.fit)
-    results = ps.run(
-        OrderedDict({
-            'seed': range(40, 80),
-            'n': range(8,19),
-            'k': range(7, 25),
-            'p': [1, 2],
-            'algo': ['ball_tree', 'kd_tree', 'brute'],
-            'weight': ['distance', 'uniform']
-        })
-    )
+    results = ps.run({
+        'seed': range(40, 80),
+        'n': range(8,19),
+        'k': range(7, 25),
+        'p': [1, 2],
+        'algo': ['ball_tree', 'kd_tree', 'brute'],
+        'weight': ['distance', 'uniform']
+    })
 
     strat.print_results(results)

@@ -1,11 +1,11 @@
 import os, tqdm, multiprocessing, platform
-from collections import OrderedDict
 
 
 class ParamShuffler:
 
     RESULT_PROPERTY_NAME = 'result'
     FINISHED_MSG = 'finished'
+    MAX_CHUNK_SIZE = 10
     PLATFORM = platform.system()
 
     def __init__(self, method):
@@ -13,15 +13,15 @@ class ParamShuffler:
         self.params = []
         self.method = method
 
-    def run(self, data_dict: OrderedDict):
+    def run(self, data_dict):
 
         # Prepare parameter combinations.
-        self.__get_params(data_dict)
+        self.__build_params_list(data_dict)
 
         # Get number of CPU and proper imap chunk size.
         cpu_count = multiprocessing.cpu_count()
         chunk_size = int(len(self.params)/cpu_count)
-        chunk_size = max(min(chunk_size, 10), 1)
+        chunk_size = max(min(chunk_size, self.MAX_CHUNK_SIZE), 1)
 
         # Initiate pool parallel processing.
         calculations = []
@@ -31,13 +31,14 @@ class ParamShuffler:
 
         # Prepare results list.
         for result, param in zip(calculations, self.params):
-            new_entry = {}
-            for index, item in enumerate(data_dict.items()):
-                new_entry[item[0]] = param[index]
-            new_entry[self.RESULT_PROPERTY_NAME] = result
-            self.results.append(new_entry)
+            param[self.RESULT_PROPERTY_NAME] = result
+            self.results.append(param)
 
-        # Alert developer of end of processing.
+        # Alert developer of end of processing and return results.
+        self.__alert_dev()
+        return self.results
+
+    def __alert_dev(self):
         if self.PLATFORM == 'Darwin':
             os.system(f'say "{self.FINISHED_MSG}"')
         elif self.PLATFORM == 'Windows':
@@ -46,25 +47,22 @@ class ParamShuffler:
         elif self.PLATFORM == 'Linux':
             os.system('play -nq -t alsa synth {} sine {}'.format(500, 1000))
 
-        return self.results
+    def __build_params_list(self, data_dict, new_entry=None, keys_to_check=None, depth=0):
+        if new_entry is None:
+            new_entry = {k:None for k, v in data_dict.items()}
+            keys_to_check = [k for k, v in data_dict.items()]
 
-    def __get_params(self, data_dict: OrderedDict, parameter_values=None, depth=0):
-
-        if parameter_values is None:
-            parameter_values = [[k,None] for k, v in data_dict.items()]
-
-        parameters = tuple([x[1] for x in parameter_values])
-        if depth == len(parameter_values):
-            self.params.append(parameters)
+        if depth == len(data_dict.items()):
+            self.params.append(new_entry)
             return
 
-        depth_iteration = list(data_dict.items())[depth][1]
-        for x in depth_iteration:
-            parameter_values[depth][1] = x
-            self.__get_params(data_dict, parameter_values, depth+1)
+        depth_iteration = keys_to_check[depth]
+        for x in data_dict[depth_iteration]:
+            new_entry[depth_iteration] = x
+            self.__build_params_list(data_dict, new_entry.copy(), keys_to_check, depth+1)
 
     def wrapper(self, args):
-        return self.method(*args)
+        return self.method(**args)
 
 
 if __name__ == "__main__":
@@ -74,12 +72,10 @@ if __name__ == "__main__":
 
     ps = ParamShuffler(test_function)
 
-    results = ps.run(
-        OrderedDict({
-            'a': range(1, 4),
-            'b': [15, 27, 42],
-        })
-    )
+    results = ps.run({
+        'a': range(1, 4),
+        'b': [5, 9, 11]
+    })
 
     print()
     print('Result type is: ', type(results))
