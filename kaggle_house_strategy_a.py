@@ -26,16 +26,20 @@ class KaggleHouseStrategyA:
     @staticmethod
     def print_results(results):
         df = pd.DataFrame(results)
-        no_of_unique = df.seed.nunique()
         final_result = df \
             .groupby(['k', 'n', 'p', 'algo', 'weight']) \
             .agg({'result': ['mean', 'var', 'min', 'max']})
 
         print('.')
-        print(f'HIGHEST MEANS ({no_of_unique} seeds, {df.shape[0]} iterations):')
+        print('PARAMETERS:')
+        for x in df.columns:
+            if x == 'result': continue
+            print(x, df[x].unique())
+        print()
+        print(f'HIGHEST MEANS ({df.seed.nunique()} seeds, {df.shape[0]} iterations):')
         print(final_result.sort_values(by=[('result', 'mean')]).head(10))
         print()
-        print(f'SMALLEST VARIANCES ({no_of_unique} seeds, {df.shape[0]} iterations):')
+        print(f'SMALLEST VARIANCES ({df.seed.nunique()} seeds, {df.shape[0]} iterations):')
         print(final_result.sort_values(by=[('result', 'var')]).head(10))
         print()
 
@@ -51,9 +55,9 @@ if __name__ == "__main__":
     ps = ParamShuffler(strat.logic)
     results = ps.run({
         'seed': range(40, 80),
-        'n': range(8,19),
-        'k': range(7, 25),
-        'p': [1, 2],
+        'n': range(4, 13),
+        'k': range(9, 25),
+        'p': [1],
         'algo': ['ball_tree', 'kd_tree', 'brute'],
         'weight': ['distance', 'uniform']
     })
