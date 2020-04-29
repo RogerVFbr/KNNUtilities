@@ -1,10 +1,8 @@
 import math
-
 import numpy as np
 import pandas as pd
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.model_selection import train_test_split
-
 from param_shuffler import ParamShuffler
 from knn_util_data_cleaning import KNNUtilDataCleaning
 
@@ -23,8 +21,7 @@ class KaggleHouseStrategyA:
                                                             random_state=seed)
         clf = KNeighborsRegressor(k, weights=weight, p=p, algorithm=algo)
         clf.fit(X_train, y_train)
-        res = [self.rmse(clf.predict(X_train), y_train), self.rmse(clf.predict(X_test), y_test)]
-        return res[1]
+        return self.rmse(clf.predict(X_test), y_test)
 
     @staticmethod
     def print_results(results):
