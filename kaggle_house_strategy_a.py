@@ -16,7 +16,7 @@ class KaggleHouseStrategyA:
         self.X = KNNUtilDataCleaning().prepare(self.train).drop(['SalePrice', 'Id'], axis=1)
         self.y = np.log(self.train.copy().SalePrice)
 
-    def fit(self, seed, n, k, p, algo, weight):
+    def logic(self, seed, n, k, p, algo, weight):
         corr_train = self.train.corr()
         top_n_cols = corr_train.nlargest(n, 'SalePrice')['SalePrice'].index
         X_train, X_test, y_train, y_test = train_test_split(self.X[top_n_cols[1:]], self.y, test_size=0.30,
@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     strat = KaggleHouseStrategyA("data_sets/kaggle_house/train.csv")
 
-    ps = ParamShuffler(strat.fit)
+    ps = ParamShuffler(strat.logic)
     results = ps.run({
         'seed': range(40, 80),
         'n': range(8,19),
