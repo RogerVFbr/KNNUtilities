@@ -1,4 +1,6 @@
+import json
 import os, tqdm, multiprocessing, platform
+from datetime import datetime
 
 
 class ParamShuffler:
@@ -25,7 +27,7 @@ class ParamShuffler:
 
         # Initiate pool parallel processing.
         calculations = []
-        pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+        pool = multiprocessing.Pool(processes=cpu_count)
         for x in tqdm.tqdm(pool.imap(self.wrapper, self.params, chunksize=chunk_size), total=len(self.params)):
             calculations.append(x)
 
@@ -64,11 +66,36 @@ class ParamShuffler:
     def wrapper(self, args):
         return self.method(**args)
 
+    def save_to_csv(self, results, file_name="param-shuffler", separator=";;"):
+
+        file_name_parts = file_name.split('.')
+        if len(file_name_parts) == 2:
+            file_name = f"{file_name_parts[0]}_{datetime.now().strftime('%y-%m-%d-%H-%M-%S')}.{file_name_parts[1]}"
+        else:
+            file_name = f"{file_name}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.csv"
+
+        column_names = [k for k, v in results[0].items() if k != self.RESULT_PROPERTY_NAME]
+        column_names.append(self.RESULT_PROPERTY_NAME)
+        data = [column_names]
+        for x in results:
+            line = []
+            for col in column_names:
+                if col == self.RESULT_PROPERTY_NAME: continue
+                line.append(json.dumps(x[col]))
+            line.append(json.dumps(x[self.RESULT_PROPERTY_NAME]))
+            data.append(line)
+
+        with open(file_name, "w") as csv_file:
+            for line in data:
+                w = separator.join(line) + '\n'
+                csv_file.write(w)
+
+
+def test_function(a, b):
+    return a * b
+
 
 if __name__ == "__main__":
-
-    def test_function(a, b):
-        return a * b
 
     ps = ParamShuffler(test_function)
 
@@ -76,6 +103,8 @@ if __name__ == "__main__":
         'a': range(1, 4),
         'b': [5, 9, 11]
     })
+
+    ps.save_to_csv(results)
 
     print('Result type is: ', type(results))
     print('Result content type is: ', type(results[0]))
